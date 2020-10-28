@@ -4,16 +4,14 @@ from knn.distances import euclidean_distance, cosine_distance
 
 
 def get_best_ranks(ranks, top, axis=1, return_ranks=False):
-    top_slice = (slice(None), ) * axis + (slice(-top, None), )
-    inv_slice = (slice(None), ) * axis + (slice(None, None, -1), )
+    top_slice = (slice(None), ) * axis + (slice(None, top), )
 
     if top < ranks.shape[axis]:
-        indices = np.argpartition(ranks, -top, axis=axis)[top_slice]
+        indices = np.argpartition(ranks, top, axis=axis)[top_slice]
         ranks_top = np.take_along_axis(ranks, indices, axis=axis)
-        indices = np.take_along_axis(indices, ranks_top.argsort(axis=axis)[inv_slice], axis=axis)
+        indices = np.take_along_axis(indices, ranks_top.argsort(axis=axis), axis=axis)
     else:
         indices = np.argsort(ranks, axis=axis)[top_slice]
-        indices = indices[inv_slice]
 
     result = (indices, )
 
@@ -84,9 +82,4 @@ class NearestNeighborsFinder:
         If return_distance=False, only the second of the specified arrays is returned.
         """
         xx_true = self._metric_func(X, self._X)
-        axis = len(xx_true.shape)-1
-        if return_distance:
-            distances, indices = get_best_ranks(-xx_true, top=self.n_neighbors, axis=axis, return_ranks=return_distance)
-            return (-distances, indices)
-        indices = get_best_ranks(-xx_true, top=self.n_neighbors, axis=axis, return_ranks=return_distance)
-        return indices
+        return get_best_ranks(xx_true, top=self.n_neighbors, axis=1, return_ranks=return_distance)
